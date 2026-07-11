@@ -3,9 +3,6 @@
 Plugin de **recompensas por eliminação** para Minecraft (Spigot/Paper).
 
 Jogadores colocam um valor em outro jogador. Quem eliminar o alvo recebe a recompensa.
-
-**Autor:** ecq  
-**Versão:** 1.0.0  
 **API:** 1.13+ (compatível com servidores 1.8–1.21, conforme materials/config)
 
 ---
@@ -32,25 +29,6 @@ Jogadores colocam um valor em outro jogador. Quem eliminar o alvo recebe a recom
 | Plugin de economia (EssentialsX, CMI, XConomy, etc.) | Sim | Saldo / saque / depósito |
 | [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/) | Não | Placeholders |
 | nChat | Não | Tag do top 1 assassino |
-
----
-
-## Instalação
-
-1. Instale o **Vault** e um plugin de economia.
-2. Coloque `Bounties-1.0.0.jar` em `plugins/`.
-3. Reinicie o servidor (ou use um plugin manager com cuidado).
-4. Ajuste `plugins/Bounties/config.yml` se quiser.
-
-### Build a partir do código
-
-```bash
-mvn clean package
-```
-
-O jar sai em `target/Bounties-1.0.0.jar`.
-
----
 
 ## Comandos
 
@@ -116,26 +94,6 @@ Mensagens, top killer e tag do nChat também são configuráveis no mesmo arquiv
 2. A recompensa fica ativa no alvo.
 3. Se outro jogador eliminar o alvo, o valor é transferido para o killer.
 4. Kills e rankings são salvos e podem ser consultados por comando ou placeholders.
-
----
-
-## Estrutura do projeto
-
-```
-src/main/java/br/ecq/Bounties/
-├── BountiesPlugin.java
-├── commands/
-├── gui/
-├── hooks/
-├── listeners/
-├── managers/
-├── placeholders/
-├── service/
-└── utils/
-src/main/resources/
-├── config.yml
-└── plugin.yml
-```
 
 ---
 
