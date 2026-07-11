@@ -1,0 +1,200 @@
+# Bounties - Configuracao
+# Compativel com Minecraft 1.8 ate 1.21
+# Dev: ecq | Desenvolvido com muito amor <3
+
+settings:
+  # Valor minimo para colocar uma recompensa
+  min-amount: 100.0
+  # Valor maximo para colocar uma recompensa (0 = sem limite)
+  max-amount: 0
+  # Taxa cobrada ao colocar recompensa (porcentagem, ex: 5 = 5%)
+  placement-fee-percent: 0
+  # Salvar dados automaticamente a cada X segundos
+  auto-save-interval: 300
+  # Impedir recompensa em si mesmo
+  block-self-bounty: true
+  # Anunciar globalmente quando uma recompensa e colocada
+  announce-bounty: true
+  # Anunciar globalmente quando uma recompensa e coletada
+  announce-claim: true
+
+killer-top:
+  # Kills minimas para alguem poder ser top 1 assassino
+  min-kills: 1
+  # Anunciar quando alguem vira top 1
+  broadcast-new-top: true
+  # Tag exibida no chat e tab (via nChat) para o top 1
+  tag:
+    text: "&4&lKILLER"
+
+messages:
+  prefix: "&8[&cRecompensa&8] &7"
+  no-permission: "&cVoce nao tem permissao para fazer isso."
+  player-only: "&cApenas jogadores podem usar este comando."
+  economy-disabled: "&cSistema de economia nao encontrado. Instale o Vault e um plugin de economia."
+  invalid-amount: "&cValor invalido. Use um numero positivo."
+  amount-too-low: "&cO valor minimo e &f{min}&c."
+  amount-too-high: "&cO valor maximo e &f{max}&c."
+  insufficient-funds: "&cVoce nao tem dinheiro suficiente. Necessario: &f{amount}&c."
+  player-not-found: "&cJogador nao encontrado."
+  cannot-bounty-self: "&cVoce nao pode colocar recompensa em si mesmo."
+  player-bypass: "&cEste jogador nao pode receber recompensas."
+  bounty-set: "&aRecompensa de &f{amount} &acolocada em &f{target}&a."
+  bounty-added: "&aAdicionado &f{amount} &aa recompensa de &f{target}&a. Total: &f{total}&a."
+  bounty-removed: "&aRecompensa de &f{target} &aremovida (&f{amount}&a)."
+  bounty-not-found: "&cNao ha recompensa ativa para &f{target}&c."
+  bounty-check: "&7Recompensa de &f{target}&7: &f{amount}"
+  bounty-check-none: "&7{target} nao possui recompensa ativa."
+  bounty-claimed-killer: "&aVoce coletou a recompensa de &f{amount} &apor eliminar &f{victim}&a!"
+  bounty-claimed-victim: "&cSua recompensa de &f{amount} &cfoi coletada por &f{killer}&c!"
+  bounty-announced-set: "&c{player} &7colocou uma recompensa de &f{amount} &7em &c{target}&7!"
+  bounty-announced-claim: "&c{killer} &7coletou a recompensa de &f{amount} &7de &c{victim}&7!"
+  list-header: "&8&m----------&r &cRecompensas Ativas &8&m----------"
+  list-entry: "&7- &f{player}&7: &f{amount}"
+  list-empty: "&7Nenhuma recompensa ativa no momento."
+  list-footer: "&8&m----------------------------------------"
+  top-header: "&8&m----------&r &cTop Recompensas &8&m----------"
+  top-entry: "&7#{rank} &f{player} &7- &f{amount}"
+  top-empty: "&7Nenhuma recompensa ativa no momento."
+  top-footer: "&8&m----------------------------------------"
+  killtop-header: "&8&m----------&r &4Top Assassinos &8&m----------"
+  killtop-entry: "&7#{rank} &f{player} &7- &c{kills} kills"
+  killtop-empty: "&7Nenhuma kill registrada ainda."
+  killtop-footer: "&8&m----------------------------------------"
+  kills-self: "&7Suas kills: &f{kills}"
+  kills-other: "&7Kills de &f{player}&7: &f{kills}"
+  new-top-killer: "&f{player} &7agora e o &4&lTOP 1 ASSASSINO &7com &f{kills} &7kills!"
+  lost-top-killer: "&7Voce perdeu o titulo de &4&lTOP 1 ASSASSINO&7!"
+  reload-success: "&aConfiguracao recarregada com sucesso."
+  gui-custom-prompt: "&7Digite o valor da recompensa no chat. &8(cancelar para voltar)"
+  gui-custom-cancel: "&7Entrada cancelada."
+  help:
+    - "&8 &cBounties &8&m"
+    - "&7/bounty set <jogador> <valor> &8- Colocar recompensa"
+    - "&7/bounty add <jogador> <valor> &8- Adicionar a recompensa"
+    - "&7/bounty remove <jogador> &8- Remover recompensa"
+    - "&7/bounty check [jogador] &8- Verificar recompensa"
+    - "&7/bounty list &8- Listar recompensas ativas"
+    - "&7/bounty top [quantidade] &8- Ranking de recompensas"
+    - "&7/bounty assassinos [quantidade] &8- Top assassinos"
+    - "&7/bounty kills [jogador] &8- Ver kills"
+    - "&7/bounty gui &8- Abrir menu grafico"
+    - "&8&m----------------------------------------"
+
+gui:
+  enabled: true
+  preset-amounts:
+    - 100
+    - 500
+    - 1000
+    - 5000
+    - 10000
+  titles:
+    main: "&8Recompensas"
+    list: "&8Recompensas Ativas &7({page}/{pages})"
+    top: "&8Top Recompensas &7({page}/{pages})"
+    select: "&8Selecionar Jogador &7({page}/{pages})"
+    detail: "&8{player}"
+    amount: "&8Valor - {player}"
+  text:
+    mode-set: "Definir"
+    mode-add: "Adicionar"
+  items:
+    list:
+      name: "&eRecompensas Ativas"
+      lore:
+        - "&7Veja todas as recompensas"
+        - "&7colocadas no servidor."
+        - ""
+        - "&aClique para abrir!"
+    place:
+      name: "&cColocar Recompensa"
+      lore:
+        - "&7Escolha um jogador e"
+        - "&7coloque uma recompensa."
+        - ""
+        - "&aClique para abrir!"
+    top:
+      name: "&6Top Recompensas"
+      lore:
+        - "&7Veja o ranking das maiores"
+        - "&7recompensas ativas."
+        - ""
+        - "&aClique para abrir!"
+    info:
+      name: "&bSuas Informacoes"
+      lore:
+        - "&7Recompensa em voce: &f{amount}"
+        - "&7Seu saldo: &f{balance}"
+    list-entry:
+      name: "&f{player}"
+      lore:
+        - "&7Recompensa: &f{amount}"
+    top-entry:
+      name: "&6#{rank} &f{player}"
+      lore:
+        - "&7Recompensa: &f{amount}"
+    click-detail:
+      - "&eClique para ver detalhes"
+    player-entry:
+      name: "&f{player}"
+      lore:
+        - "&7Recompensa atual: &f{amount}"
+    click-select:
+      - "&aClique para selecionar"
+    empty:
+      name: "&cNenhum jogador online"
+      lore:
+        - "&7Nao ha jogadores disponiveis."
+    detail-head:
+      name: "&f{player}"
+      lore:
+        - "&7Recompensa: &f{amount}"
+        - "&7Ranking: &f#{rank}"
+    set:
+      name: "&aDefinir Recompensa"
+      lore:
+        - "&7Substitui a recompensa atual"
+        - "&7por um novo valor."
+        - ""
+        - "&aClique!"
+    add:
+      name: "&eAdicionar Recompensa"
+      lore:
+        - "&7Adiciona valor a recompensa"
+        - "&7ja existente."
+        - ""
+        - "&aClique!"
+    remove:
+      name: "&cRemover Recompensa"
+      lore:
+        - "&7Remove a recompensa deste jogador."
+        - ""
+        - "&cClique!"
+    amount-head:
+      name: "&f{player}"
+      lore:
+        - "&7Modo: &f{mode}"
+        - "&7Recompensa atual: &f{current}"
+        - "&7Seu saldo: &f{balance}"
+    preset:
+      name: "&f{amount}"
+      lore:
+        - "&aClique para confirmar!"
+    custom:
+      name: "&bValor Personalizado"
+      lore:
+        - "&7Digite o valor no chat."
+        - "&8Digite 'cancelar' para voltar."
+    prev:
+      name: "&ePagina Anterior"
+      lore:
+        - "&7Ir para pagina {page}"
+    next:
+      name: "&eProxima Pagina"
+      lore:
+        - "&7Ir para pagina {page}"
+    back:
+      name: "&cVoltar"
+      lore:
+        - "&7Voltar ao menu anterior"

@@ -1,0 +1,89 @@
+name: Bounties
+version: ${project.version}
+main: br.ecq.Bounties.BountiesPlugin
+api-version: 1.13
+author: ecq
+description: Recompensas por matar jogadores
+depend: [Vault]
+softdepend: [PlaceholderAPI, nChat, EcqEconomy, Essentials, EssentialsX, CMI, iConomy, BOSEconomy, TNE, XConomy]
+
+commands:
+  bounty:
+    description: Comando principal de recompensas
+    aliases: [bounties, recompensa, recompensas]
+    usage: /bounty <set|add|remove|check|list|top|assassinos|kills|gui|help>
+
+permissions:
+  bounties.use:
+    description: Permite usar o comando /bounty
+    default: true
+  bounties.set:
+    description: Permite colocar recompensa em um jogador
+    default: true
+  bounties.add:
+    description: Permite adicionar valor a uma recompensa existente
+    default: true
+  bounties.remove:
+    description: Permite remover recompensa de um jogador
+    default: op
+  bounties.check:
+    description: Permite verificar recompensa de um jogador
+    default: true
+  bounties.list:
+    description: Permite listar todas as recompensas ativas
+    default: true
+  bounties.top:
+    description: Permite ver o ranking de recompensas
+    default: true
+  bounties.killtop:
+    description: Permite ver o top assassinos
+    default: true
+  bounties.kills:
+    description: Permite ver suas kills
+    default: true
+  bounties.kills.other:
+    description: Permite ver kills de outros jogadores
+    default: true
+  bounties.gui:
+    description: Permite abrir o menu grafico de recompensas
+    default: true
+  bounties.admin:
+    description: Acesso administrativo completo
+    default: op
+    children:
+      bounties.remove: true
+      bounties.set.other: true
+      bounties.add.other: true
+      bounties.check.other: true
+  bounties.bypass:
+    description: Impede que recompensas sejam colocadas em voce
+    default: op
+  bounties.set.other:
+    description: Permite colocar recompensa em outros jogadores
+    default: true
+  bounties.add.other:
+    description: Permite adicionar recompensa em outros jogadores
+    default: true
+  bounties.check.other:
+    description: Permite verificar recompensa de outros jogadores
+    default: true
+  bounties.*:
+    description: Todas as permissoes do Bounties
+    default: op
+    children:
+      bounties.use: true
+      bounties.set: true
+      bounties.add: true
+      bounties.remove: true
+      bounties.check: true
+      bounties.list: true
+      bounties.top: true
+      bounties.killtop: true
+      bounties.kills: true
+      bounties.kills.other: true
+      bounties.gui: true
+      bounties.admin: true
+      bounties.bypass: true
+      bounties.set.other: true
+      bounties.add.other: true
+      bounties.check.other: true
