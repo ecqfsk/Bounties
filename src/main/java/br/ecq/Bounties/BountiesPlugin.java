@@ -4,11 +4,15 @@ import br.ecq.Bounties.commands.BountyCommand;
 import br.ecq.Bounties.gui.GuiManager;
 import br.ecq.Bounties.hooks.NChatHook;
 import br.ecq.Bounties.listeners.BountyGuiListener;
+import br.ecq.Bounties.listeners.CombatListener;
 import br.ecq.Bounties.listeners.DeathListener;
 import br.ecq.Bounties.managers.BountyManager;
 import br.ecq.Bounties.managers.ConfigManager;
+import br.ecq.Bounties.managers.CooldownManager;
 import br.ecq.Bounties.managers.EconomyManager;
+import br.ecq.Bounties.managers.HistoryManager;
 import br.ecq.Bounties.managers.KillManager;
+import br.ecq.Bounties.managers.VisualEffectManager;
 import br.ecq.Bounties.placeholders.BountyPlaceholders;
 import br.ecq.Bounties.service.BountyService;
 import net.milkbowl.vault.economy.Economy;
@@ -26,6 +30,9 @@ public class BountiesPlugin extends JavaPlugin {
     private BountyService bountyService;
     private GuiManager guiManager;
     private KillManager killManager;
+    private HistoryManager historyManager;
+    private CooldownManager cooldownManager;
+    private VisualEffectManager visualEffectManager;
     private NChatHook nChatHook;
 
     private static final int ECONOMY_HOOK_MAX_ATTEMPTS = 10;
@@ -40,9 +47,12 @@ public class BountiesPlugin extends JavaPlugin {
         configManager = new ConfigManager(this);
         bountyManager = new BountyManager(this);
         killManager = new KillManager(this);
+        historyManager = new HistoryManager(this);
+        cooldownManager = new CooldownManager(this);
         economyManager = new EconomyManager(this);
         bountyService = new BountyService(this);
         guiManager = new GuiManager(this);
+        visualEffectManager = new VisualEffectManager(this);
 
         if (setupEconomy()) {
             finishEnable();
@@ -72,14 +82,17 @@ public class BountiesPlugin extends JavaPlugin {
     private void finishEnable() {
         bountyManager.load();
         killManager.load();
+        historyManager.load();
 
         getCommand("bounty").setExecutor(new BountyCommand(this));
         getCommand("bounty").setTabCompleter(new BountyCommand(this));
         Bukkit.getPluginManager().registerEvents(new DeathListener(this), this);
         Bukkit.getPluginManager().registerEvents(new BountyGuiListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new CombatListener(this), this);
 
         setupPlaceholders();
         attemptNChatHook(1);
+        visualEffectManager.start();
 
         long interval = configManager.getAutoSaveInterval() * 20L;
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, new Runnable() {
@@ -87,8 +100,18 @@ public class BountiesPlugin extends JavaPlugin {
             public void run() {
                 bountyManager.save();
                 killManager.save();
+                historyManager.save();
             }
         }, interval, interval);
+
+        // Expirações a cada 60s
+        Bukkit.getScheduler().runTaskTimer(this, new Runnable() {
+            @Override
+            public void run() {
+                bountyService.processExpireWarnings();
+                bountyService.processExpirations();
+            }
+        }, 20L * 30, 20L * 60);
 
         getLogger().info("Bounties ativado! Economia: " + economyManager.getEconomyName());
         getLogger().info("Compativel com 1.8 - 1.21");
@@ -96,6 +119,9 @@ public class BountiesPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (visualEffectManager != null) {
+            visualEffectManager.stop();
+        }
         if (nChatHook != null) {
             nChatHook.unregister();
         }
@@ -105,6 +131,9 @@ public class BountiesPlugin extends JavaPlugin {
         if (killManager != null) {
             killManager.save();
         }
+        if (historyManager != null) {
+            historyManager.save();
+        }
         getLogger().info("Bounties desativado.");
     }
 
@@ -113,8 +142,12 @@ public class BountiesPlugin extends JavaPlugin {
         configManager.reload();
         bountyManager.load();
         killManager.load();
+        historyManager.load();
         if (nChatHook != null) {
             nChatHook.register();
+        }
+        if (visualEffectManager != null) {
+            visualEffectManager.reload();
         }
     }
 
@@ -197,5 +230,17 @@ public class BountiesPlugin extends JavaPlugin {
 
     public KillManager getKillManager() {
         return killManager;
+    }
+
+    public HistoryManager getHistoryManager() {
+        return historyManager;
+    }
+
+    public CooldownManager getCooldownManager() {
+        return cooldownManager;
+    }
+
+    public VisualEffectManager getVisualEffectManager() {
+        return visualEffectManager;
     }
 }

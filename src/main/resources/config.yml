@@ -18,6 +18,38 @@ settings:
   # Anunciar globalmente quando uma recompensa e coletada
   announce-claim: true
 
+  # --- Expiracao ---
+  # Tempo em segundos para a recompensa expirar (0 = nunca)
+  expire-after-seconds: 86400
+  # Reembolsar contribuidores quando expirar
+  expire-refund: true
+  # Avisar contribuidores X segundos antes de expirar (0 = desligado)
+  expire-warn-seconds: 300
+  # Renovar expiracao ao adicionar valor
+  refresh-expire-on-add: true
+  # Anunciar quando uma recompensa expira
+  announce-expire: true
+
+  # --- Cooldown / limites ---
+  # Cooldown em segundos entre colocar/adicionar recompensas (0 = off)
+  cooldown-seconds: 30
+  # Maximo de alvos em que o jogador pode ter contribuicao ativa (0 = ilimitado)
+  max-active-placed: 5
+  # Maximo de dinheiro que o jogador pode ter em contribuicoes ativas (0 = ilimitado)
+  max-amount-placed: 0
+  # Segundos de combate recentes exigidos para claim (0 = desligado)
+  min-combat-seconds: 0
+
+  # --- Reembolso ---
+  # Reembolsar ao remover recompensa
+  refund-on-remove: true
+  # Reembolsar contribuidores anteriores ao usar /bounty set (substituir)
+  refund-on-replace: true
+  # Porcentagem reembolsada (100 = total)
+  refund-percent: 100.0
+  # Permitir que contribuidores removam a propria contribuicao
+  allow-own-remove: true
+
 killer-top:
   # Kills minimas para alguem poder ser top 1 assassino
   min-kills: 1
@@ -26,6 +58,27 @@ killer-top:
   # Tag exibida no chat e tab (via nChat) para o top 1
   tag:
     text: "&4&lKILLER"
+
+visuals:
+  enabled: true
+  particles: true
+  action-bar: true
+  # Glow no alvo (1.9+; pode conflitar com outros plugins)
+  glow: false
+  sounds: true
+  particle-type: FLAME
+  particle-count: 8
+  interval-ticks: 20
+  action-bar-format: "&c☠ Recompensa: &f{amount}"
+  sound-place: ENTITY_EXPERIENCE_ORB_PICKUP
+  sound-claim: ENTITY_PLAYER_LEVELUP
+  never-expire-text: "&7Nunca"
+
+history:
+  # Maximo de entradas salvas (0 = ilimitado)
+  max-entries: 500
+  # Quantidade padrao no /bounty history
+  display-limit: 10
 
 messages:
   prefix: "&8[&cRecompensa&8] &7"
@@ -41,16 +94,31 @@ messages:
   player-bypass: "&cEste jogador nao pode receber recompensas."
   bounty-set: "&aRecompensa de &f{amount} &acolocada em &f{target}&a."
   bounty-added: "&aAdicionado &f{amount} &aa recompensa de &f{target}&a. Total: &f{total}&a."
-  bounty-removed: "&aRecompensa de &f{target} &aremovida (&f{amount}&a)."
+  bounty-removed: "&aRecompensa de &f{target} &aremovida (&f{amount}&a). Contribuidores reembolsados."
+  bounty-removed-own: "&aSua contribuicao em &f{target} &afoi removida. Reembolso: &f{amount}&a."
   bounty-not-found: "&cNao ha recompensa ativa para &f{target}&c."
   bounty-check: "&7Recompensa de &f{target}&7: &f{amount}"
   bounty-check-none: "&7{target} nao possui recompensa ativa."
+  bounty-check-contributors: "&7Contribuidores: {contributors}"
+  bounty-check-expires: "&7Expira em: &f{time}"
   bounty-claimed-killer: "&aVoce coletou a recompensa de &f{amount} &apor eliminar &f{victim}&a!"
+  bounty-claimed-contributors: "&7Colocada por: {contributors}"
   bounty-claimed-victim: "&cSua recompensa de &f{amount} &cfoi coletada por &f{killer}&c!"
   bounty-announced-set: "&c{player} &7colocou uma recompensa de &f{amount} &7em &c{target}&7!"
   bounty-announced-claim: "&c{killer} &7coletou a recompensa de &f{amount} &7de &c{victim}&7!"
+  bounty-expires-in: "&7Esta recompensa expira em &f{time}&7."
+  bounty-expired: "&7A recompensa de &c{target} &7(&f{amount}&7) expirou."
+  bounty-expired-self: "&7A recompensa em voce (&f{amount}&7) expirou."
+  bounty-expire-warn: "&eA recompensa em &f{target} &e(&f{amount}&e) expira em &f{time}&e!"
+  bounty-expire-warn-target: "&eA recompensa em voce (&f{amount}&e) expira em &f{time}&e!"
+  bounty-refunded: "&aVoce recebeu &f{amount} &ade reembolso da recompensa em &f{target}&a. &8({reason})"
+  on-cooldown: "&cAguarde &f{time} &cantes de colocar outra recompensa."
+  max-active-placed: "&cVoce ja tem recompensas em &f{max} &calvos. Remova uma antes."
+  max-amount-placed: "&cLimite de valor em recompensas ativas: &f{max}&c."
+  claim-not-in-combat: "&cE necessario combate recente para coletar recompensas."
+  not-contributor: "&cVoce nao contribuiu com essa recompensa."
   list-header: "&8&m----------&r &cRecompensas Ativas &8&m----------"
-  list-entry: "&7- &f{player}&7: &f{amount}"
+  list-entry: "&7- &f{player}&7: &f{amount} &8(expira: {time})"
   list-empty: "&7Nenhuma recompensa ativa no momento."
   list-footer: "&8&m----------------------------------------"
   top-header: "&8&m----------&r &cTop Recompensas &8&m----------"
@@ -68,16 +136,29 @@ messages:
   reload-success: "&aConfiguracao recarregada com sucesso."
   gui-custom-prompt: "&7Digite o valor da recompensa no chat. &8(cancelar para voltar)"
   gui-custom-cancel: "&7Entrada cancelada."
+  history-header: "&8&m----------&r &cHistorico &8&m----------"
+  history-entry: "&8[{time}] &7{type} &f{actor} &7-> &f{target} &8(&f{amount}&8)"
+  history-empty: "&7Nenhum registro encontrado."
+  history-footer: "&8&m----------------------------------------"
+  stats-header: "&8&m----------&r &cStats de {player} &8&m----------"
+  stats-earned: "&7Ganho em claims: &a{amount}"
+  stats-spent: "&7Gasto em recompensas: &c{amount}"
+  stats-claims: "&7Claims: &f{count}"
+  stats-placements: "&7Colocacoes: &f{count}"
+  stats-kills: "&7Kills com recompensa: &f{count}"
+  stats-footer: "&8&m----------------------------------------"
   help:
     - "&8 &cBounties &8&m"
     - "&7/bounty set <jogador> <valor> &8- Colocar recompensa"
     - "&7/bounty add <jogador> <valor> &8- Adicionar a recompensa"
-    - "&7/bounty remove <jogador> &8- Remover recompensa"
+    - "&7/bounty remove <jogador> &8- Remover (admin ou sua contribuicao)"
     - "&7/bounty check [jogador] &8- Verificar recompensa"
     - "&7/bounty list &8- Listar recompensas ativas"
     - "&7/bounty top [quantidade] &8- Ranking de recompensas"
     - "&7/bounty assassinos [quantidade] &8- Top assassinos"
     - "&7/bounty kills [jogador] &8- Ver kills"
+    - "&7/bounty history [jogador] &8- Historico"
+    - "&7/bounty stats [jogador] &8- Estatisticas"
     - "&7/bounty gui &8- Abrir menu grafico"
     - "&8&m----------------------------------------"
 
@@ -126,14 +207,20 @@ gui:
       lore:
         - "&7Recompensa em voce: &f{amount}"
         - "&7Seu saldo: &f{balance}"
+        - "&7Ganho em claims: &a{earned}"
+        - "&7Gasto: &c{spent}"
+        - "&7Claims: &f{claims}"
     list-entry:
       name: "&f{player}"
       lore:
         - "&7Recompensa: &f{amount}"
+        - "&7Expira: &f{time}"
+        - "&7Por: {contributors}"
     top-entry:
       name: "&6#{rank} &f{player}"
       lore:
         - "&7Recompensa: &f{amount}"
+        - "&7Expira: &f{time}"
     click-detail:
       - "&eClique para ver detalhes"
     player-entry:
@@ -151,11 +238,15 @@ gui:
       lore:
         - "&7Recompensa: &f{amount}"
         - "&7Ranking: &f#{rank}"
+        - "&7Expira: &f{time}"
+        - "&7Contribuidores:"
+        - "{contributors}"
     set:
       name: "&aDefinir Recompensa"
       lore:
         - "&7Substitui a recompensa atual"
         - "&7por um novo valor."
+        - "&8(reembolsa contribuidores)"
         - ""
         - "&aClique!"
     add:
@@ -168,7 +259,8 @@ gui:
     remove:
       name: "&cRemover Recompensa"
       lore:
-        - "&7Remove a recompensa deste jogador."
+        - "&7Remove a recompensa / sua contribuicao"
+        - "&7e reembolsa o valor."
         - ""
         - "&cClique!"
     amount-head:

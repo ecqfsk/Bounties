@@ -11,7 +11,7 @@ commands:
   bounty:
     description: Comando principal de recompensas
     aliases: [bounties, recompensa, recompensas]
-    usage: /bounty <set|add|remove|check|list|top|assassinos|kills|gui|help>
+    usage: /bounty <set|add|remove|check|list|top|assassinos|kills|history|stats|gui|help>
 
 permissions:
   bounties.use:
@@ -24,8 +24,11 @@ permissions:
     description: Permite adicionar valor a uma recompensa existente
     default: true
   bounties.remove:
-    description: Permite remover recompensa de um jogador
+    description: Permite remover recompensa completa de um jogador
     default: op
+  bounties.remove.own:
+    description: Permite remover a propria contribuicao de uma recompensa
+    default: true
   bounties.check:
     description: Permite verificar recompensa de um jogador
     default: true
@@ -44,6 +47,18 @@ permissions:
   bounties.kills.other:
     description: Permite ver kills de outros jogadores
     default: true
+  bounties.history:
+    description: Permite ver historico de recompensas
+    default: true
+  bounties.history.other:
+    description: Permite ver historico de outros jogadores
+    default: true
+  bounties.stats:
+    description: Permite ver estatisticas
+    default: true
+  bounties.stats.other:
+    description: Permite ver estatisticas de outros
+    default: true
   bounties.gui:
     description: Permite abrir o menu grafico de recompensas
     default: true
@@ -55,8 +70,18 @@ permissions:
       bounties.set.other: true
       bounties.add.other: true
       bounties.check.other: true
+      bounties.history.other: true
+      bounties.stats.other: true
+      bounties.bypass.cooldown: true
+      bounties.bypass.limits: true
   bounties.bypass:
     description: Impede que recompensas sejam colocadas em voce
+    default: op
+  bounties.bypass.cooldown:
+    description: Ignora cooldown de colocacao
+    default: op
+  bounties.bypass.limits:
+    description: Ignora limites de recompensas ativas
     default: op
   bounties.set.other:
     description: Permite colocar recompensa em outros jogadores
@@ -75,15 +100,22 @@ permissions:
       bounties.set: true
       bounties.add: true
       bounties.remove: true
+      bounties.remove.own: true
       bounties.check: true
       bounties.list: true
       bounties.top: true
       bounties.killtop: true
       bounties.kills: true
       bounties.kills.other: true
+      bounties.history: true
+      bounties.history.other: true
+      bounties.stats: true
+      bounties.stats.other: true
       bounties.gui: true
       bounties.admin: true
       bounties.bypass: true
+      bounties.bypass.cooldown: true
+      bounties.bypass.limits: true
       bounties.set.other: true
       bounties.add.other: true
       bounties.check.other: true

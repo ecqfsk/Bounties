@@ -1,6 +1,10 @@
 package br.ecq.Bounties.commands;
 
 import br.ecq.Bounties.BountiesPlugin;
+import br.ecq.Bounties.model.BountyData;
+import br.ecq.Bounties.model.HistoryEntry;
+import br.ecq.Bounties.model.PlayerStats;
+import br.ecq.Bounties.service.BountyResult;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
@@ -9,8 +13,10 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -18,6 +24,7 @@ import java.util.UUID;
 public class BountyCommand implements CommandExecutor, TabCompleter {
 
     private final BountiesPlugin plugin;
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM HH:mm");
 
     public BountyCommand(BountiesPlugin plugin) {
         this.plugin = plugin;
@@ -67,6 +74,12 @@ public class BountyCommand implements CommandExecutor, TabCompleter {
                 return handleKillTop(sender, args);
             case "kills":
                 return handleKills(sender, args);
+            case "history":
+            case "historico":
+                return handleHistory(sender, args);
+            case "stats":
+            case "estatisticas":
+                return handleStats(sender, args);
             case "reload":
                 return handleReload(sender);
             case "help":
@@ -126,47 +139,10 @@ public class BountyCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        if (plugin.getConfigManager().isBlockSelfBounty()
-                && target.getUniqueId().equals(player.getUniqueId())) {
-            sender.sendMessage(plugin.getConfigManager().getMessage("cannot-bounty-self"));
-            return true;
+        BountyResult result = plugin.getBountyService().setBounty(player, target, amount);
+        if (result != BountyResult.SUCCESS) {
+            plugin.getBountyService().sendResultMessage(player, result, amount);
         }
-
-        if (target.isOnline() && target.getPlayer().hasPermission("bounties.bypass")
-                && !sender.hasPermission("bounties.admin")) {
-            sender.sendMessage(plugin.getConfigManager().getMessage("player-bypass"));
-            return true;
-        }
-
-        double totalCost = calculateTotalCost(amount);
-        if (!plugin.getEconomyManager().has(player, totalCost)) {
-            sender.sendMessage(plugin.getConfigManager().format(
-                    plugin.getConfigManager().getMessage("insufficient-funds"),
-                    "amount", plugin.getEconomyManager().format(totalCost)
-            ));
-            return true;
-        }
-
-        plugin.getEconomyManager().withdraw(player, totalCost);
-        plugin.getBountyManager().setBounty(target.getUniqueId(), amount);
-
-        String formatted = plugin.getEconomyManager().format(amount);
-        sender.sendMessage(plugin.getConfigManager().format(
-                plugin.getConfigManager().getMessage("bounty-set"),
-                "amount", formatted,
-                "target", target.getName()
-        ));
-
-        if (plugin.getConfigManager().isAnnounceBounty()) {
-            Bukkit.broadcastMessage(plugin.getConfigManager().format(
-                    plugin.getConfigManager().getMessage("bounty-announced-set"),
-                    "player", player.getName(),
-                    "amount", formatted,
-                    "target", target.getName()
-            ));
-        }
-
-        saveAsync();
         return true;
     }
 
@@ -197,58 +173,14 @@ public class BountyCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        if (plugin.getConfigManager().isBlockSelfBounty()
-                && target.getUniqueId().equals(player.getUniqueId())) {
-            sender.sendMessage(plugin.getConfigManager().getMessage("cannot-bounty-self"));
-            return true;
+        BountyResult result = plugin.getBountyService().addBounty(player, target, amount);
+        if (result != BountyResult.SUCCESS) {
+            plugin.getBountyService().sendResultMessage(player, result, amount);
         }
-
-        if (target.isOnline() && target.getPlayer().hasPermission("bounties.bypass")
-                && !sender.hasPermission("bounties.admin")) {
-            sender.sendMessage(plugin.getConfigManager().getMessage("player-bypass"));
-            return true;
-        }
-
-        double totalCost = calculateTotalCost(amount);
-        if (!plugin.getEconomyManager().has(player, totalCost)) {
-            sender.sendMessage(plugin.getConfigManager().format(
-                    plugin.getConfigManager().getMessage("insufficient-funds"),
-                    "amount", plugin.getEconomyManager().format(totalCost)
-            ));
-            return true;
-        }
-
-        plugin.getEconomyManager().withdraw(player, totalCost);
-        double total = plugin.getBountyManager().addBounty(target.getUniqueId(), amount);
-
-        String formatted = plugin.getEconomyManager().format(amount);
-        String formattedTotal = plugin.getEconomyManager().format(total);
-        sender.sendMessage(plugin.getConfigManager().format(
-                plugin.getConfigManager().getMessage("bounty-added"),
-                "amount", formatted,
-                "target", target.getName(),
-                "total", formattedTotal
-        ));
-
-        if (plugin.getConfigManager().isAnnounceBounty()) {
-            Bukkit.broadcastMessage(plugin.getConfigManager().format(
-                    plugin.getConfigManager().getMessage("bounty-announced-set"),
-                    "player", player.getName(),
-                    "amount", formattedTotal,
-                    "target", target.getName()
-            ));
-        }
-
-        saveAsync();
         return true;
     }
 
     private boolean handleRemove(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("bounties.remove") && !sender.hasPermission("bounties.admin")) {
-            sender.sendMessage(plugin.getConfigManager().getMessage("no-permission"));
-            return true;
-        }
-
         if (args.length < 2) {
             sendHelp(sender);
             return true;
@@ -260,22 +192,45 @@ public class BountyCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        if (!plugin.getBountyManager().hasBounty(target.getUniqueId())) {
-            sender.sendMessage(plugin.getConfigManager().format(
-                    plugin.getConfigManager().getMessage("bounty-not-found"),
-                    "target", target.getName()
-            ));
+        if (!(sender instanceof Player)) {
+            double previous = plugin.getBountyManager().getBounty(target.getUniqueId());
+            BountyResult result = plugin.getBountyService().removeBountyAdmin(target, "Console");
+            if (result == BountyResult.BOUNTY_NOT_FOUND) {
+                sender.sendMessage(plugin.getConfigManager().format(
+                        plugin.getConfigManager().getMessage("bounty-not-found"),
+                        "target", target.getName()
+                ));
+            } else {
+                sender.sendMessage(plugin.getConfigManager().format(
+                        plugin.getConfigManager().getMessage("bounty-removed"),
+                        "target", target.getName(),
+                        "amount", plugin.getEconomyManager().format(previous)
+                ));
+            }
             return true;
         }
 
-        double amount = plugin.getBountyManager().removeBounty(target.getUniqueId());
-        sender.sendMessage(plugin.getConfigManager().format(
-                plugin.getConfigManager().getMessage("bounty-removed"),
-                "target", target.getName(),
-                "amount", plugin.getEconomyManager().format(amount)
-        ));
+        Player player = (Player) sender;
+        boolean canAdmin = player.hasPermission("bounties.remove") || player.hasPermission("bounties.admin");
+        boolean canOwn = plugin.getConfigManager().isAllowOwnRemove()
+                && player.hasPermission("bounties.remove.own");
 
-        saveAsync();
+        if (!canAdmin && !canOwn) {
+            sender.sendMessage(plugin.getConfigManager().getMessage("no-permission"));
+            return true;
+        }
+
+        BountyResult result = plugin.getBountyService().removeBounty(player, target);
+        if (result != BountyResult.SUCCESS) {
+            if (result == BountyResult.BOUNTY_NOT_FOUND) {
+                sender.sendMessage(plugin.getConfigManager().format(
+                        plugin.getConfigManager().getMessage("bounty-not-found"),
+                        "target", target.getName()
+                ));
+            } else {
+                plugin.getBountyService().sendResultMessage(player, result, 0);
+            }
+        }
         return true;
     }
 
@@ -313,11 +268,24 @@ public class BountyCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        double amount = plugin.getBountyManager().getBounty(target.getUniqueId());
+        BountyData data = plugin.getBountyManager().getBountyData(target.getUniqueId());
+        double amount = data.getAmount();
         sender.sendMessage(plugin.getConfigManager().format(
                 plugin.getConfigManager().getMessage("bounty-check"),
                 "target", target.getName(),
                 "amount", plugin.getEconomyManager().format(amount)
+        ));
+
+        String contributors = plugin.getVisualEffectManager().formatContributors(data, 8);
+        sender.sendMessage(plugin.getConfigManager().format(
+                plugin.getConfigManager().getMessage("bounty-check-contributors"),
+                "contributors", contributors
+        ));
+
+        String expires = plugin.getVisualEffectManager().formatTimeLeft(data);
+        sender.sendMessage(plugin.getConfigManager().format(
+                plugin.getConfigManager().getMessage("bounty-check-expires"),
+                "time", expires
         ));
         return true;
     }
@@ -340,10 +308,13 @@ public class BountyCommand implements CommandExecutor, TabCompleter {
                 if (name == null) {
                     name = entry.getKey().toString();
                 }
+                BountyData data = plugin.getBountyManager().getBountyData(entry.getKey());
+                String time = plugin.getVisualEffectManager().formatTimeLeft(data);
                 sender.sendMessage(plugin.getConfigManager().format(
                         plugin.getConfigManager().getMessage("list-entry"),
                         "player", name,
-                        "amount", plugin.getEconomyManager().format(entry.getValue())
+                        "amount", plugin.getEconomyManager().format(entry.getValue()),
+                        "time", time
                 ));
             }
         }
@@ -476,6 +447,140 @@ public class BountyCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
+    private boolean handleHistory(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("bounties.history")) {
+            sender.sendMessage(plugin.getConfigManager().getMessage("no-permission"));
+            return true;
+        }
+
+        int limit = plugin.getConfigManager().getHistoryDisplayLimit();
+        OfflinePlayer filter = null;
+
+        if (args.length >= 2) {
+            if (!sender.hasPermission("bounties.history.other") && !sender.hasPermission("bounties.admin")) {
+                // Se for o proprio nome, ok
+                if (!(sender instanceof Player)
+                        || !((Player) sender).getName().equalsIgnoreCase(args[1])) {
+                    sender.sendMessage(plugin.getConfigManager().getMessage("no-permission"));
+                    return true;
+                }
+            }
+            filter = Bukkit.getOfflinePlayer(args[1]);
+            if (!hasPlayedBefore(filter)) {
+                sender.sendMessage(plugin.getConfigManager().getMessage("player-not-found"));
+                return true;
+            }
+        } else if (sender instanceof Player) {
+            filter = (Player) sender;
+        }
+
+        List<HistoryEntry> entries;
+        if (filter != null) {
+            entries = plugin.getHistoryManager().getRecentFor(filter.getUniqueId(), limit);
+        } else {
+            entries = plugin.getHistoryManager().getRecent(limit);
+        }
+
+        sender.sendMessage(plugin.getConfigManager().getRawMessage("history-header"));
+        if (entries.isEmpty()) {
+            sender.sendMessage(plugin.getConfigManager().getMessage("history-empty"));
+        } else {
+            // getRecentFor already newest-first; getRecent is oldest-first in sublist - reverse display for recent
+            List<HistoryEntry> display = new ArrayList<HistoryEntry>(entries);
+            if (filter == null) {
+                // reverse so newest first
+                java.util.Collections.reverse(display);
+            }
+            for (HistoryEntry entry : display) {
+                sender.sendMessage(plugin.getConfigManager().format(
+                        plugin.getConfigManager().getMessage("history-entry"),
+                        "time", dateFormat.format(new Date(entry.getTimestamp())),
+                        "type", formatHistoryType(entry.getType()),
+                        "actor", entry.getActorName(),
+                        "target", entry.getTargetName(),
+                        "amount", plugin.getEconomyManager().format(entry.getAmount())
+                ));
+            }
+        }
+        sender.sendMessage(plugin.getConfigManager().getRawMessage("history-footer"));
+        return true;
+    }
+
+    private String formatHistoryType(HistoryEntry.Type type) {
+        switch (type) {
+            case SET:
+                return "SET";
+            case ADD:
+                return "ADD";
+            case REMOVE:
+                return "REMOVE";
+            case CLAIM:
+                return "CLAIM";
+            case EXPIRE:
+                return "EXPIRE";
+            case REFUND:
+                return "REFUND";
+            default:
+                return type.name();
+        }
+    }
+
+    private boolean handleStats(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("bounties.stats")) {
+            sender.sendMessage(plugin.getConfigManager().getMessage("no-permission"));
+            return true;
+        }
+
+        OfflinePlayer target;
+        if (args.length < 2) {
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(plugin.getConfigManager().getMessage("player-only"));
+                return true;
+            }
+            target = (Player) sender;
+        } else {
+            if (!sender.hasPermission("bounties.stats.other") && !sender.hasPermission("bounties.admin")) {
+                sender.sendMessage(plugin.getConfigManager().getMessage("no-permission"));
+                return true;
+            }
+            target = Bukkit.getOfflinePlayer(args[1]);
+            if (!hasPlayedBefore(target)) {
+                sender.sendMessage(plugin.getConfigManager().getMessage("player-not-found"));
+                return true;
+            }
+        }
+
+        PlayerStats stats = plugin.getHistoryManager().getStats(target.getUniqueId());
+        String name = target.getName() != null ? target.getName() : args.length >= 2 ? args[1] : "?";
+
+        sender.sendMessage(plugin.getConfigManager().format(
+                plugin.getConfigManager().getRawMessage("stats-header"),
+                "player", name
+        ));
+        sender.sendMessage(plugin.getConfigManager().format(
+                plugin.getConfigManager().getMessage("stats-earned"),
+                "amount", plugin.getEconomyManager().format(stats.getEarned())
+        ));
+        sender.sendMessage(plugin.getConfigManager().format(
+                plugin.getConfigManager().getMessage("stats-spent"),
+                "amount", plugin.getEconomyManager().format(stats.getSpent())
+        ));
+        sender.sendMessage(plugin.getConfigManager().format(
+                plugin.getConfigManager().getMessage("stats-claims"),
+                "count", String.valueOf(stats.getClaims())
+        ));
+        sender.sendMessage(plugin.getConfigManager().format(
+                plugin.getConfigManager().getMessage("stats-placements"),
+                "count", String.valueOf(stats.getPlacements())
+        ));
+        sender.sendMessage(plugin.getConfigManager().format(
+                plugin.getConfigManager().getMessage("stats-kills"),
+                "count", String.valueOf(stats.getKillsWithBounty())
+        ));
+        sender.sendMessage(plugin.getConfigManager().getRawMessage("stats-footer"));
+        return true;
+    }
+
     private boolean handleReload(CommandSender sender) {
         if (!sender.hasPermission("bounties.admin")) {
             sender.sendMessage(plugin.getConfigManager().getMessage("no-permission"));
@@ -540,14 +645,6 @@ public class BountyCommand implements CommandExecutor, TabCompleter {
         }
     }
 
-    private double calculateTotalCost(double amount) {
-        double fee = plugin.getConfigManager().getPlacementFeePercent();
-        if (fee <= 0) {
-            return amount;
-        }
-        return amount + (amount * fee / 100.0);
-    }
-
     private boolean hasPlayedBefore(OfflinePlayer player) {
         try {
             return player.hasPlayedBefore() || player.isOnline();
@@ -562,21 +659,15 @@ public class BountyCommand implements CommandExecutor, TabCompleter {
         }
     }
 
-    private void saveAsync() {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
-            @Override
-            public void run() {
-                plugin.getBountyManager().save();
-            }
-        });
-    }
-
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> completions = new ArrayList<String>();
 
         if (args.length == 1) {
-            List<String> subs = Arrays.asList("set", "add", "remove", "check", "list", "top", "killtop", "assassinos", "kills", "gui", "help", "reload");
+            List<String> subs = Arrays.asList(
+                    "set", "add", "remove", "check", "list", "top", "killtop", "assassinos",
+                    "kills", "history", "stats", "gui", "help", "reload"
+            );
             String input = args[0].toLowerCase();
             for (String sub : subs) {
                 if (sub.startsWith(input)) {
@@ -592,7 +683,9 @@ public class BountyCommand implements CommandExecutor, TabCompleter {
         if (args.length == 2) {
             String sub = args[0].toLowerCase();
             if (sub.equals("set") || sub.equals("add") || sub.equals("remove")
-                    || sub.equals("check") || sub.equals("ver") || sub.equals("kills")) {
+                    || sub.equals("check") || sub.equals("ver") || sub.equals("kills")
+                    || sub.equals("history") || sub.equals("historico")
+                    || sub.equals("stats") || sub.equals("estatisticas")) {
                 String input = args[1].toLowerCase();
                 for (Player player : Bukkit.getOnlinePlayers()) {
                     if (player.getName().toLowerCase().startsWith(input)) {

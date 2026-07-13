@@ -1,6 +1,8 @@
 package br.ecq.Bounties.gui;
 
 import br.ecq.Bounties.BountiesPlugin;
+import br.ecq.Bounties.model.BountyData;
+import br.ecq.Bounties.model.PlayerStats;
 import br.ecq.Bounties.utils.ItemBuilder;
 import br.ecq.Bounties.utils.Materials;
 import org.bukkit.Bukkit;
@@ -55,11 +57,15 @@ public class GuiManager {
                 .build());
 
         double ownBounty = plugin.getBountyManager().getBounty(player.getUniqueId());
+        PlayerStats stats = plugin.getHistoryManager().getStats(player.getUniqueId());
         List<String> infoLore = new ArrayList<String>(plugin.getConfigManager().getGuiItemLore("info"));
         for (int i = 0; i < infoLore.size(); i++) {
             infoLore.set(i, infoLore.get(i)
                     .replace("{amount}", plugin.getEconomyManager().format(ownBounty))
-                    .replace("{balance}", plugin.getEconomyManager().format(plugin.getEconomyManager().getBalance(player))));
+                    .replace("{balance}", plugin.getEconomyManager().format(plugin.getEconomyManager().getBalance(player)))
+                    .replace("{earned}", plugin.getEconomyManager().format(stats.getEarned()))
+                    .replace("{spent}", plugin.getEconomyManager().format(stats.getSpent()))
+                    .replace("{claims}", String.valueOf(stats.getClaims())));
         }
 
         inv.setItem(16, ItemBuilder.playerHead(
@@ -105,16 +111,26 @@ public class GuiManager {
             OfflinePlayer target = Bukkit.getOfflinePlayer(entry.getKey());
             String name = target.getName() != null ? target.getName() : entry.getKey().toString();
             String formatted = plugin.getEconomyManager().format(entry.getValue());
+            BountyData bountyData = plugin.getBountyManager().getBountyData(entry.getKey());
+            String expires = plugin.getVisualEffectManager().formatTimeLeft(bountyData);
+            String contributors = plugin.getVisualEffectManager().formatContributors(bountyData, 3);
 
             List<String> lore = new ArrayList<String>();
             if (type == GuiType.TOP) {
                 int rank = i + 1;
                 for (String line : plugin.getConfigManager().getGuiItemLore("top-entry")) {
-                    lore.add(line.replace("{rank}", String.valueOf(rank)).replace("{amount}", formatted));
+                    lore.add(line
+                            .replace("{rank}", String.valueOf(rank))
+                            .replace("{amount}", formatted)
+                            .replace("{time}", expires)
+                            .replace("{contributors}", contributors));
                 }
             } else {
                 for (String line : plugin.getConfigManager().getGuiItemLore("list-entry")) {
-                    lore.add(line.replace("{amount}", formatted));
+                    lore.add(line
+                            .replace("{amount}", formatted)
+                            .replace("{time}", expires)
+                            .replace("{contributors}", contributors));
                 }
             }
             lore.add("");
@@ -206,12 +222,17 @@ public class GuiManager {
 
         double bounty = plugin.getBountyManager().getBounty(targetUuid);
         int rank = plugin.getBountyManager().getRank(targetUuid);
+        BountyData bountyData = plugin.getBountyManager().getBountyData(targetUuid);
+        String expires = plugin.getVisualEffectManager().formatTimeLeft(bountyData);
+        String contributors = plugin.getVisualEffectManager().formatContributors(bountyData, 5);
 
         List<String> headLore = new ArrayList<String>();
         for (String line : plugin.getConfigManager().getGuiItemLore("detail-head")) {
             headLore.add(line
                     .replace("{amount}", plugin.getEconomyManager().format(bounty))
-                    .replace("{rank}", rank > 0 ? String.valueOf(rank) : "-"));
+                    .replace("{rank}", rank > 0 ? String.valueOf(rank) : "-")
+                    .replace("{time}", expires)
+                    .replace("{contributors}", contributors));
         }
 
         inv.setItem(4, ItemBuilder.playerHead(
@@ -237,8 +258,12 @@ public class GuiManager {
                     .build());
         }
 
-        if ((viewer.hasPermission("bounties.remove") || viewer.hasPermission("bounties.admin"))
-                && plugin.getBountyManager().hasBounty(targetUuid)) {
+        boolean canRemove = viewer.hasPermission("bounties.remove") || viewer.hasPermission("bounties.admin");
+        boolean canRemoveOwn = plugin.getConfigManager().isAllowOwnRemove()
+                && viewer.hasPermission("bounties.remove.own")
+                && bountyData != null
+                && bountyData.hasContributor(viewer.getUniqueId());
+        if ((canRemove || canRemoveOwn) && plugin.getBountyManager().hasBounty(targetUuid)) {
             inv.setItem(15, new ItemBuilder(Materials.get("BARRIER", "REDSTONE_BLOCK"))
                     .name(plugin.getConfigManager().getGuiItemName("remove"))
                     .lore(plugin.getConfigManager().getGuiItemLore("remove"))

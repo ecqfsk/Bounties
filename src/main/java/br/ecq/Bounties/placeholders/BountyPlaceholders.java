@@ -1,10 +1,12 @@
 package br.ecq.Bounties.placeholders;
 
 import br.ecq.Bounties.BountiesPlugin;
+import br.ecq.Bounties.managers.VisualEffectManager;
+import br.ecq.Bounties.model.BountyData;
+import br.ecq.Bounties.model.PlayerStats;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.entity.Player;
 
 import java.util.List;
 import java.util.Map;
@@ -126,6 +128,9 @@ public class BountyPlaceholders extends PlaceholderExpansion {
             return null;
         }
 
+        PlayerStats stats = plugin.getHistoryManager().getStats(player.getUniqueId());
+        BountyData data = plugin.getBountyManager().getBountyData(player.getUniqueId());
+
         switch (lower) {
             case "amount":
                 return plugin.getEconomyManager().format(
@@ -141,9 +146,50 @@ public class BountyPlaceholders extends PlaceholderExpansion {
                 return String.valueOf(plugin.getKillManager().getKills(player.getUniqueId()));
             case "kill_rank":
                 return String.valueOf(plugin.getKillManager().getRank(player.getUniqueId()));
+            case "expires":
+            case "time_left":
+                return plugin.getVisualEffectManager().formatTimeLeft(data);
+            case "expires_raw":
+                return data != null && data.hasExpiration()
+                        ? String.valueOf(data.getMillisUntilExpire(System.currentTimeMillis()) / 1000L)
+                        : "0";
+            case "contributors":
+                return stripColor(plugin.getVisualEffectManager().formatContributors(data, 5));
+            case "contributor_count":
+                return data != null ? String.valueOf(data.getContributorCount()) : "0";
+            case "earned":
+                return plugin.getEconomyManager().format(stats.getEarned());
+            case "earned_raw":
+                return String.valueOf(stats.getEarned());
+            case "spent":
+                return plugin.getEconomyManager().format(stats.getSpent());
+            case "spent_raw":
+                return String.valueOf(stats.getSpent());
+            case "claims":
+                return String.valueOf(stats.getClaims());
+            case "placements":
+                return String.valueOf(stats.getPlacements());
+            case "bounty_kills":
+                return String.valueOf(stats.getKillsWithBounty());
+            case "active_placed":
+                return String.valueOf(plugin.getBountyManager().countPlacedBy(player.getUniqueId()));
+            case "active_placed_amount":
+                return plugin.getEconomyManager().format(plugin.getBountyManager().sumPlacedBy(player.getUniqueId()));
+            case "cooldown":
+                long cd = plugin.getCooldownManager().getRemainingCooldownMs(player.getUniqueId());
+                return cd > 0 ? VisualEffectManager.formatDuration(cd) : "0";
+            case "cooldown_raw":
+                return String.valueOf(plugin.getCooldownManager().getRemainingCooldownMs(player.getUniqueId()) / 1000L);
             default:
                 return null;
         }
+    }
+
+    private String stripColor(String text) {
+        if (text == null) {
+            return "";
+        }
+        return org.bukkit.ChatColor.stripColor(text);
     }
 
     private String getKillerTopName(String indexStr) {

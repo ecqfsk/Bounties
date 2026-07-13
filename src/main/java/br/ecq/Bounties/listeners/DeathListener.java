@@ -38,40 +38,7 @@ public class DeathListener implements Listener {
             return;
         }
 
-        double bounty = plugin.getBountyManager().removeBounty(victim.getUniqueId());
-        plugin.getEconomyManager().deposit(killer, bounty);
-
-        String formatted = plugin.getEconomyManager().format(bounty);
-
-        killer.sendMessage(plugin.getConfigManager().format(
-                plugin.getConfigManager().getMessage("bounty-claimed-killer"),
-                "amount", formatted,
-                "victim", victim.getName()
-        ));
-
-        if (victim.isOnline()) {
-            victim.sendMessage(plugin.getConfigManager().format(
-                    plugin.getConfigManager().getMessage("bounty-claimed-victim"),
-                    "amount", formatted,
-                    "killer", killer.getName()
-            ));
-        }
-
-        if (plugin.getConfigManager().isAnnounceClaim()) {
-            Bukkit.broadcastMessage(plugin.getConfigManager().format(
-                    plugin.getConfigManager().getMessage("bounty-announced-claim"),
-                    "amount", formatted,
-                    "killer", killer.getName(),
-                    "victim", victim.getName()
-            ));
-        }
-
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
-            @Override
-            public void run() {
-                plugin.getBountyManager().save();
-            }
-        });
+        plugin.getBountyService().claimBounty(killer, victim);
     }
 
     private void handleKillTracking(Player killer) {

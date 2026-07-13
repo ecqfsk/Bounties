@@ -23,6 +23,43 @@ public class ConfigManager {
     private boolean broadcastNewTopKiller;
     private String killerTagText;
 
+    // Expiration
+    private int expireAfterSeconds;
+    private boolean expireRefund;
+    private int expireWarnSeconds;
+    private boolean refreshExpireOnAdd;
+    private boolean announceExpire;
+
+    // Cooldown / limits
+    private int cooldownSeconds;
+    private int maxActivePlaced;
+    private double maxAmountPlaced;
+    private int minCombatSeconds;
+
+    // Refund
+    private boolean refundOnRemove;
+    private boolean refundOnReplace;
+    private double refundPercent;
+    private boolean allowOwnRemove;
+
+    // Visuals
+    private boolean visualsEnabled;
+    private boolean particlesEnabled;
+    private boolean actionBarEnabled;
+    private boolean glowEnabled;
+    private boolean soundEnabled;
+    private String particleType;
+    private int particleCount;
+    private int visualIntervalTicks;
+    private String actionBarFormat;
+    private String soundPlace;
+    private String soundClaim;
+    private String neverExpireText;
+
+    // History
+    private int historyMaxEntries;
+    private int historyDisplayLimit;
+
     public ConfigManager(BountiesPlugin plugin) {
         this.plugin = plugin;
         reload();
@@ -36,6 +73,23 @@ public class ConfigManager {
         blockSelfBounty = plugin.getConfig().getBoolean("settings.block-self-bounty", true);
         announceBounty = plugin.getConfig().getBoolean("settings.announce-bounty", true);
         announceClaim = plugin.getConfig().getBoolean("settings.announce-claim", true);
+
+        expireAfterSeconds = plugin.getConfig().getInt("settings.expire-after-seconds", 86400);
+        expireRefund = plugin.getConfig().getBoolean("settings.expire-refund", true);
+        expireWarnSeconds = plugin.getConfig().getInt("settings.expire-warn-seconds", 300);
+        refreshExpireOnAdd = plugin.getConfig().getBoolean("settings.refresh-expire-on-add", true);
+        announceExpire = plugin.getConfig().getBoolean("settings.announce-expire", true);
+
+        cooldownSeconds = plugin.getConfig().getInt("settings.cooldown-seconds", 30);
+        maxActivePlaced = plugin.getConfig().getInt("settings.max-active-placed", 5);
+        maxAmountPlaced = plugin.getConfig().getDouble("settings.max-amount-placed", 0);
+        minCombatSeconds = plugin.getConfig().getInt("settings.min-combat-seconds", 0);
+
+        refundOnRemove = plugin.getConfig().getBoolean("settings.refund-on-remove", true);
+        refundOnReplace = plugin.getConfig().getBoolean("settings.refund-on-replace", true);
+        refundPercent = plugin.getConfig().getDouble("settings.refund-percent", 100.0);
+        allowOwnRemove = plugin.getConfig().getBoolean("settings.allow-own-remove", true);
+
         guiEnabled = plugin.getConfig().getBoolean("gui.enabled", true);
         presetAmounts = new ArrayList<Double>();
         for (Double value : plugin.getConfig().getDoubleList("gui.preset-amounts")) {
@@ -48,9 +102,27 @@ public class ConfigManager {
             presetAmounts.add(5000.0);
             presetAmounts.add(10000.0);
         }
+
         minKillsForTop = plugin.getConfig().getInt("killer-top.min-kills", 1);
         broadcastNewTopKiller = plugin.getConfig().getBoolean("killer-top.broadcast-new-top", true);
         killerTagText = colorize(plugin.getConfig().getString("killer-top.tag.text", "&4&lKILLER"));
+
+        visualsEnabled = plugin.getConfig().getBoolean("visuals.enabled", true);
+        particlesEnabled = plugin.getConfig().getBoolean("visuals.particles", true);
+        actionBarEnabled = plugin.getConfig().getBoolean("visuals.action-bar", true);
+        glowEnabled = plugin.getConfig().getBoolean("visuals.glow", false);
+        soundEnabled = plugin.getConfig().getBoolean("visuals.sounds", true);
+        particleType = plugin.getConfig().getString("visuals.particle-type", "FLAME");
+        particleCount = plugin.getConfig().getInt("visuals.particle-count", 8);
+        visualIntervalTicks = plugin.getConfig().getInt("visuals.interval-ticks", 20);
+        actionBarFormat = colorize(plugin.getConfig().getString("visuals.action-bar-format",
+                "&c☠ Recompensa: &f{amount}"));
+        soundPlace = plugin.getConfig().getString("visuals.sound-place", "ENTITY_EXPERIENCE_ORB_PICKUP");
+        soundClaim = plugin.getConfig().getString("visuals.sound-claim", "ENTITY_PLAYER_LEVELUP");
+        neverExpireText = colorize(plugin.getConfig().getString("visuals.never-expire-text", "&7Nunca"));
+
+        historyMaxEntries = plugin.getConfig().getInt("history.max-entries", 500);
+        historyDisplayLimit = plugin.getConfig().getInt("history.display-limit", 10);
     }
 
     public String getMessage(String key) {
@@ -117,6 +189,58 @@ public class ConfigManager {
         return announceClaim;
     }
 
+    public int getExpireAfterSeconds() {
+        return expireAfterSeconds;
+    }
+
+    public boolean isExpireRefund() {
+        return expireRefund;
+    }
+
+    public int getExpireWarnSeconds() {
+        return expireWarnSeconds;
+    }
+
+    public boolean isRefreshExpireOnAdd() {
+        return refreshExpireOnAdd;
+    }
+
+    public boolean isAnnounceExpire() {
+        return announceExpire;
+    }
+
+    public int getCooldownSeconds() {
+        return cooldownSeconds;
+    }
+
+    public int getMaxActivePlaced() {
+        return maxActivePlaced;
+    }
+
+    public double getMaxAmountPlaced() {
+        return maxAmountPlaced;
+    }
+
+    public int getMinCombatSeconds() {
+        return minCombatSeconds;
+    }
+
+    public boolean isRefundOnRemove() {
+        return refundOnRemove;
+    }
+
+    public boolean isRefundOnReplace() {
+        return refundOnReplace;
+    }
+
+    public double getRefundPercent() {
+        return refundPercent;
+    }
+
+    public boolean isAllowOwnRemove() {
+        return allowOwnRemove;
+    }
+
     public boolean isGuiEnabled() {
         return guiEnabled;
     }
@@ -161,5 +285,68 @@ public class ConfigManager {
 
     public String getKillerTagText() {
         return killerTagText;
+    }
+
+    public boolean isVisualsEnabled() {
+        return visualsEnabled;
+    }
+
+    public boolean isParticlesEnabled() {
+        return particlesEnabled;
+    }
+
+    public boolean isActionBarEnabled() {
+        return actionBarEnabled;
+    }
+
+    public boolean isGlowEnabled() {
+        return glowEnabled;
+    }
+
+    public boolean isSoundEnabled() {
+        return soundEnabled;
+    }
+
+    public String getParticleType() {
+        return particleType;
+    }
+
+    public int getParticleCount() {
+        return particleCount;
+    }
+
+    public int getVisualIntervalTicks() {
+        return visualIntervalTicks;
+    }
+
+    public String getActionBarFormat() {
+        return actionBarFormat;
+    }
+
+    public String getSoundPlace() {
+        return soundPlace;
+    }
+
+    public String getSoundClaim() {
+        return soundClaim;
+    }
+
+    public String getNeverExpireText() {
+        return neverExpireText;
+    }
+
+    public int getHistoryMaxEntries() {
+        return historyMaxEntries;
+    }
+
+    public int getHistoryDisplayLimit() {
+        return historyDisplayLimit;
+    }
+
+    public long computeExpiresAt() {
+        if (expireAfterSeconds <= 0) {
+            return 0L;
+        }
+        return System.currentTimeMillis() + (expireAfterSeconds * 1000L);
     }
 }

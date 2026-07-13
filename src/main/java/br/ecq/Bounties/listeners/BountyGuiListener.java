@@ -156,8 +156,13 @@ public class BountyGuiListener implements Listener {
             guiManager.openAmount(player, targetUuid, targetName, false);
         } else if (slot == 13 && player.hasPermission("bounties.add")) {
             guiManager.openAmount(player, targetUuid, targetName, true);
-        } else if (slot == 15 && (player.hasPermission("bounties.remove") || player.hasPermission("bounties.admin"))) {
-            removeBounty(player, targetUuid, targetName);
+        } else if (slot == 15) {
+            boolean canRemove = player.hasPermission("bounties.remove") || player.hasPermission("bounties.admin");
+            boolean canOwn = plugin.getConfigManager().isAllowOwnRemove()
+                    && player.hasPermission("bounties.remove.own");
+            if (canRemove || canOwn) {
+                removeBounty(player, targetUuid, targetName);
+            }
         } else if (slot == 22) {
             guiManager.openMain(player);
         }
@@ -217,27 +222,19 @@ public class BountyGuiListener implements Listener {
     }
 
     private void removeBounty(Player player, UUID targetUuid, String targetName) {
-        if (!plugin.getBountyManager().hasBounty(targetUuid)) {
-            player.sendMessage(plugin.getConfigManager().format(
-                    plugin.getConfigManager().getMessage("bounty-not-found"),
-                    "target", targetName
-            ));
+        OfflinePlayer target = Bukkit.getOfflinePlayer(targetUuid);
+        BountyResult result = bountyService.removeBounty(player, target);
+        if (result != BountyResult.SUCCESS) {
+            if (result == BountyResult.BOUNTY_NOT_FOUND) {
+                player.sendMessage(plugin.getConfigManager().format(
+                        plugin.getConfigManager().getMessage("bounty-not-found"),
+                        "target", targetName
+                ));
+            } else {
+                bountyService.sendResultMessage(player, result, 0);
+            }
             return;
         }
-
-        double amount = plugin.getBountyManager().removeBounty(targetUuid);
-        player.sendMessage(plugin.getConfigManager().format(
-                plugin.getConfigManager().getMessage("bounty-removed"),
-                "target", targetName,
-                "amount", plugin.getEconomyManager().format(amount)
-        ));
-
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
-            @Override
-            public void run() {
-                plugin.getBountyManager().save();
-            }
-        });
 
         guiManager.openList(player, 0);
     }
